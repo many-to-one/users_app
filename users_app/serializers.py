@@ -5,6 +5,7 @@ from rest_framework.exceptions import AuthenticationFailed
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import smart_str, force_str, smart_bytes, DjangoUnicodeDecodeError
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -64,8 +65,10 @@ class LoginSerializer(serializers.ModelSerializer):
         email = attrs.get('email', '')
         password = attrs.get('password', '')
 
-        user = User.objects.filter(email=email).first()
+        # user = User.objects.filter(email=email).first()
+        user = User.objects.get(email=email)
         user.is_active = True
+        user.save()
         if not user:
             raise AuthenticationFailed('Invalid credentials, try again')
         if not user.is_active:
@@ -79,7 +82,7 @@ class LoginSerializer(serializers.ModelSerializer):
             'tokens': user.tokens
         }
 
-        # return super().validate(attrs)    
+        return super().validate(attrs)    
 
 
 class ResetPasswordEmailRequestSerializer(serializers.Serializer):
@@ -122,3 +125,23 @@ class SetNewPasswordSerializer(serializers.Serializer):
             raise AuthenticationFailed('The reset link is invalid', 401)
         return super().validate(attrs)
         
+
+class LogoutSerializer(serializers.Serializer):
+    # refresh = serializers.CharField()
+    access = serializers.CharField()
+
+    default_error_message = {
+        'bad_token': ('Token is expired or invalid')
+    }
+
+    def validate(self, attrs):
+        self.token = attrs['access']
+        return attrs
+
+    def save(self, **kwargs):
+
+        try:
+            RefreshToken(self.token).blacklist()
+
+        except TokenError:
+            self.fail('bad_token')

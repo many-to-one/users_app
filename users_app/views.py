@@ -1,8 +1,8 @@
 from django.shortcuts import render
-from rest_framework import generics, status, views
+from rest_framework import generics, status, views, permissions
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.response import Response
-from .serializers import EmailVerificationSerializer, LoginSerializer, RegisterSerializer, ResetPasswordEmailRequestSerializer, SetNewPasswordSerializer
+from .serializers import EmailVerificationSerializer, LoginSerializer, LogoutSerializer, RegisterSerializer, ResetPasswordEmailRequestSerializer, SetNewPasswordSerializer
 from .models import User
 from .utils import Util
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -16,6 +16,7 @@ from django.utils.encoding import smart_str, force_str, smart_bytes, DjangoUnico
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode 
 from django.contrib.sites.shortcuts import get_current_site
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from rest_framework.authtoken.models import Token
 
 
 class RegisterView(generics.GenericAPIView):
@@ -58,7 +59,7 @@ class VerifyEmail(views.APIView):
             if not token:
                 return Response({'error': 'No token'}, status=status.HTTP_400_BAD_REQUEST)
             if not settings.SECRET_KEY:
-                return Response({'error': 'Mo settings.SECRET_KEY'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': 'No settings.SECRET_KEY'}, status=status.HTTP_400_BAD_REQUEST)
             user = User.objects.get(id=payload['user_id'])
             if not user.is_verified:
                 user.is_verified = True
@@ -161,4 +162,33 @@ class SetNewPasswordAPIView(generics.GenericAPIView):
                 'message': 'Password reseted successfully!'
             },
             status=status.HTTP_200_OK,
-        )                
+        )       
+
+
+# class LogoutView(generics.GenericAPIView):
+#     serializer_class = LogoutSerializer
+#     permission_classes = (permissions.IsAuthenticated,)
+
+#     def post(self, request):
+#         serializer = self.serializer_class(data=request.data)
+#         serializer.is_valid(raise_exception=True)
+#         response = Response()
+#         response.delete_cookie('jwt')
+#         response.data = {
+#             'message': 'success'
+#         }
+#         return response
+
+
+class LogoutView(views.APIView):
+    def post(self, request):
+        # user_info = request.user
+        # user = User.objects.get(id=user_info.id)
+        # user.is_active = False
+        # user.save()
+        response = Response()
+        response.delete_cookie('jwt')
+        response.data = {
+            'message': 'success'
+        }
+        return response                
