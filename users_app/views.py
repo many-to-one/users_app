@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework import generics, status, views, permissions
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.response import Response
-from .serializers import EmailVerificationSerializer, LoginSerializer, LogoutSerializer, RegisterSerializer, ResetPasswordEmailRequestSerializer, SetNewPasswordSerializer
+from .serializers import EmailVerificationSerializer, LoginSerializer, LogoutSerializer, RegisterSerializer, ResetPasswordEmailRequestSerializer, SetNewPasswordSerializer, UserSerializer
 from .models import User
 from .utils import Util
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -81,6 +81,24 @@ class LoginApiView(generics.GenericAPIView):
         serializer = self.serializer_class(data=request.data) 
         serializer.is_valid(raise_exception=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class UserView(views.APIView):
+
+    def get(self, request):
+        token = request.COOKIES.get('jwt')
+
+        if not token:
+            raise AuthenticationFailed('Unauthenticated!')
+
+        try:
+            payload = jwt.decode(token, 'secret', algorithms=['HS256'])
+        except jwt.ExpiredSignatureError:
+            raise AuthenticationFailed('Unauthenticated!')
+
+        user = User.objects.filter(id=payload['id']).first()
+        serializer = UserSerializer(user)
+        return Response(serializer.data)
 
 
 # class LoginApiView(APIView):
