@@ -135,6 +135,11 @@ class SetNewPasswordSerializer(serializers.Serializer):
 
 class LogoutSerializer(serializers.Serializer):
     refresh = serializers.CharField()
+    class Meta:
+        model=User
+        fields = [
+            'email',
+        ]
 
     default_error_message = {
         'bad_token': ('Token is expired or invalid')

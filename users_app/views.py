@@ -189,38 +189,17 @@ class LogoutView(generics.GenericAPIView):
     # permission_classes = (permissions.IsAuthenticated, )
 
     def post(self, request, *args):
-        sz = self.get_serializer(data=request.data)
-        sz.is_valid(raise_exception=True)
-        sz.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        serializer = self.get_serializer(data=request.data)
+        # serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)  
 
 
-# class LogoutView(generics.GenericAPIView):
-#     serializer_class = LogoutSerializer
-#     permission_classes = (permissions.IsAuthenticated,)
+class IsActiveOff(generics.GenericAPIView):
 
-#     def post(self, request):
-#         serializer = self.serializer_class(data=request.data)
-#         serializer.is_valid(raise_exception=True)
-#         response = Response()
-#         response.delete_cookie('jwt')
-#         response.data = {
-#             'message': 'success'
-#         }
-#         return response
-
-
-# class LogoutView(views.APIView):
-#     def post(self, request):
-#         # user_info = request.user
-#         # user = User.objects.get(id=user_info.id)
-#         # user.is_active = False
-#         # user.save()
-#         response = Response()
-#         response.delete_cookie('tokens')
-#         response.data = {
-#             'message': 'success'
-#         }
-#         return response          
-
-     
+    def post(self, request, email):
+        user = User.objects.get(email=email)
+        user.is_active = False
+        user.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)     
