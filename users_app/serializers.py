@@ -134,15 +134,14 @@ class SetNewPasswordSerializer(serializers.Serializer):
         
 
 class LogoutSerializer(serializers.Serializer):
-    # refresh = serializers.CharField()
-    access = serializers.CharField()
+    refresh = serializers.CharField()
 
     default_error_message = {
         'bad_token': ('Token is expired or invalid')
     }
 
     def validate(self, attrs):
-        self.token = attrs['access']
+        self.token = attrs['refresh']
         return attrs
 
     def save(self, **kwargs):

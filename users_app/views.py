@@ -17,6 +17,7 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.contrib.sites.shortcuts import get_current_site
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from rest_framework.authtoken.models import Token
+from rest_framework.decorators import api_view
 
 
 class RegisterView(generics.GenericAPIView):
@@ -180,7 +181,18 @@ class SetNewPasswordAPIView(generics.GenericAPIView):
                 'message': 'Password reseted successfully!'
             },
             status=status.HTTP_200_OK,
-        )       
+        )    
+
+
+class LogoutView(generics.GenericAPIView):
+    serializer_class = LogoutSerializer
+    # permission_classes = (permissions.IsAuthenticated, )
+
+    def post(self, request, *args):
+        sz = self.get_serializer(data=request.data)
+        sz.is_valid(raise_exception=True)
+        sz.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # class LogoutView(generics.GenericAPIView):
@@ -198,15 +210,17 @@ class SetNewPasswordAPIView(generics.GenericAPIView):
 #         return response
 
 
-class LogoutView(views.APIView):
-    def post(self, request):
-        # user_info = request.user
-        # user = User.objects.get(id=user_info.id)
-        # user.is_active = False
-        # user.save()
-        response = Response()
-        response.delete_cookie('jwt')
-        response.data = {
-            'message': 'success'
-        }
-        return response                
+# class LogoutView(views.APIView):
+#     def post(self, request):
+#         # user_info = request.user
+#         # user = User.objects.get(id=user_info.id)
+#         # user.is_active = False
+#         # user.save()
+#         response = Response()
+#         response.delete_cookie('tokens')
+#         response.data = {
+#             'message': 'success'
+#         }
+#         return response          
+
+     
