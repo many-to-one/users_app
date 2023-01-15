@@ -107,22 +107,22 @@ class SetNewPasswordSerializer(serializers.Serializer):
         min_length=6,
         write_only=True,
     )
-    token = serializers.CharField(
-        min_length=1, 
-        write_only=True,
-    )
+    # token = serializers.CharField(
+    #     min_length=1, 
+    #     write_only=True,
+    # )
     uidb64 = serializers.CharField(
         min_length=1, 
         write_only=True,
     )
 
     class Meta:
-        fields = ['password', 'token', 'uidb64']
+        fields = ['password'] # 'token' 'uidb64'
 
     def validate(self, attrs):
         try:
             password = attrs.get('password')
-            token = attrs.get('token')
+            # token = attrs.get('token')
             uidb64 = attrs.get('uidb64')
             id = force_str(urlsafe_base64_decode(uidb64))
             user = User.objects.get(id=id)
