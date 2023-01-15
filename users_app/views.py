@@ -1,3 +1,4 @@
+import datetime
 from django.shortcuts import render
 from rest_framework import generics, status, views, permissions
 from rest_framework.exceptions import AuthenticationFailed
@@ -50,7 +51,11 @@ class VerifyEmail(views.APIView):
     serializer_class = EmailVerificationSerializer
 
     token_param_config = openapi.Parameter(
-        'token', in_=openapi.IN_QUERY, description='Description', type=openapi.TYPE_STRING)
+        'token', 
+        in_=openapi.IN_QUERY, 
+        description='Description', 
+        type=openapi.TYPE_STRING
+    )
 
     @swagger_auto_schema(manual_parameters=[token_param_config])
     def get(self, request):
@@ -74,15 +79,47 @@ class VerifyEmail(views.APIView):
             return Response({'error': 'Invalid token'}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class LoginApiView(generics.GenericAPIView):
-
-    serializer_class=LoginSerializer
-
+class LoginApiView(views.APIView):
     def post(self, request):
-        serializer = self.serializer_class(data=request.data) 
-        serializer.is_valid(raise_exception=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        email = request.data['email']
+        password = request.data['password']
 
+        user = User.objects.filter(email=email).first()
+
+        if user is None:
+            raise AuthenticationFailed('User not found!')
+
+        if not user.check_password(password):
+            raise AuthenticationFailed('Incorrect password!')
+
+        payload = {
+            'id': user.id,
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=60),
+            'iat': datetime.datetime.utcnow()
+        }
+
+        token = jwt.encode(payload, 'secret', algorithm='HS256') #.decode('utf-8')
+
+        response = Response()
+
+        response.set_cookie(key='jwt', value=token, httponly=True)
+        response.data = {
+            'jwt': token,
+            'email': user.email,
+            'username': user.username,
+        }
+        return response
+
+
+# class LoginApiView(generics.GenericAPIView):
+
+#     serializer_class=LoginSerializer
+
+#     def post(self, request):
+#         serializer = self.serializer_class(data=request.data) 
+#         serializer.is_valid(raise_exception=True)
+#         return Response(serializer.data, status=status.HTTP_200_OK)
+       
 
 class UserView(views.APIView):
 
@@ -101,24 +138,6 @@ class UserView(views.APIView):
         serializer = UserSerializer(user)
         return Response(serializer.data)
 
-
-# class LoginApiView(APIView):
-#     def post(self, request):
-#         email = request.data['email'] 
-#         password = request.data['password']
-
-#         user = User.objects.filter(email=email).first()
-
-#         if user is None:
-#             raise AuthenticationFailed ('User is not found!')    
-
-#         if not user.check_password(password) :
-#             raise AuthenticationFailed ('Incorrecr password!')
-
-#         return Response({
-#             'massage': 'Succes!'
-#         }) 
-                   
 
 class RequestPasswordResetEmail(generics.GenericAPIView):
     serializer_class = ResetPasswordEmailRequestSerializer
