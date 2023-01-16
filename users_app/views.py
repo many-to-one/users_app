@@ -141,23 +141,6 @@ class UserView(views.APIView):
         return Response(serializer.data)
 
 
-# class SetNewPasswordAPIView(views.APIView):
-
-#     def patch(self, request):
-#         token = request.COOKIES.get('jwt')
-
-#         if not token:
-#             raise AuthenticationFailed('Unauthenticated!')
-
-#         try:
-#             payload = jwt.decode(token, 'secret', algorithms=['HS256'])
-#         except jwt.ExpiredSignatureError:
-#             raise AuthenticationFailed('Unauthenticated!')
-
-#         user = User.objects.filter(id=payload['id']).first()
-#         user.set_password()
-
-
 class RequestPasswordResetEmail(generics.GenericAPIView):
     serializer_class = ResetPasswordEmailRequestSerializer
 
@@ -172,22 +155,23 @@ class RequestPasswordResetEmail(generics.GenericAPIView):
             token = PasswordResetTokenGenerator().make_token(user)
 
             current_site = "http://localhost:3000" # get_current_site(request=request).domain
-            relativeLink = reverse('password-reset-confirm', kwargs={'uidb64': uidb64, 'token': token})
-            redirect_url = request.data.get('redirect_url', '')
-            absurl = 'http://'+current_site + relativeLink
+            # relativeLink = reverse('password-reset-confirm', kwargs={'uidb64': uidb64, 'token': token})
+            # redirect_url = request.data.get('redirect_url', '')
+            # absurl = 'http://'+current_site + relativeLink
             email_body = 'Hello, \n Use link below to reset your password  \n' + \
                 "http://localhost:3000/password-reset-complete/" # absurl+"?redirect_url="+redirect_url
             data = {'email_body': email_body, 'to_email': user.email,
                     'email_subject': 'Reset your passsword'}
             Util.send_email(data)
         return Response(
-            {
+            {   
                 'success': 'We have sent you a link to reset your password',
                 'token' : token,
                 'uidb64': uidb64,
+                'reletive_link' : reverse('password-reset-confirm', kwargs={'uidb64': uidb64, 'token': token}),
             }, 
-            status=status.HTTP_200_OK
-            )
+            status=status.HTTP_200_OK,
+        )
 
 
 class PasswordTokenCheckAPI(generics.GenericAPIView):
@@ -217,9 +201,11 @@ class PasswordTokenCheckAPI(generics.GenericAPIView):
 class SetNewPasswordAPIView(generics.GenericAPIView):
     serializer_class = SetNewPasswordSerializer   
 
-    def patch(self, request):
-        # request.data['uidb64'] = uidb64
-        serializer = self.serializer_class(data=request.data)
+    def post(self, request):
+        try:
+            serializer = self.serializer_class(data=request.data)
+        except Exception:
+            raise('data is invalid')
         serializer.is_valid(raise_exception=True)
         return Response(
             {
