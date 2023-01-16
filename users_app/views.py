@@ -3,10 +3,10 @@ from django.shortcuts import render
 from rest_framework import generics, status, views, permissions
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.response import Response
-from .serializers import EmailVerificationSerializer, LoginSerializer, LogoutSerializer, RegisterSerializer, ResetPasswordEmailRequestSerializer, SetNewPasswordSerializer, UserSerializer
+from .serializers import EmailVerificationSerializer, LoginSerializer, RegisterSerializer, ResetPasswordEmailRequestSerializer, SetNewPasswordSerializer, UserSerializer
 from .models import User
 from .utils import Util
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from django.contrib.sites.shortcuts import get_current_site
 from django.urls import reverse
 import jwt
@@ -227,25 +227,21 @@ class SetNewPasswordAPIView(generics.GenericAPIView):
                 'message': 'Password reseted successfully!'
             },
             status=status.HTTP_200_OK,
-        )    
+        )      
 
 
-class LogoutView(generics.GenericAPIView):
-    serializer_class = LogoutSerializer
-    # permission_classes = (permissions.IsAuthenticated, )
+class LogoutView(views.APIView):
 
-    def post(self, request, *args):
-        serializer = self.get_serializer(data=request.data)
-        # serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)  
-
-
-class IsActiveOff(generics.GenericAPIView):
-
-    def post(self, request, email):
-        user = User.objects.get(email=email)
+    def post(self, request):
+        token = request.COOKIES.get('jwt')
+        payload = jwt.decode(token, 'secret', algorithms=['HS256'])
+        user = User.objects.get(id=payload['id'])
         user.is_active = False
         user.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)     
+        try:
+            refresh_token = RefreshToken(request.data.get('refresh'))
+            refresh_token.blacklist()
+            return Response({'message': 'Success', 'status': status.HTTP_205_RESET_CONTENT})
+
+        except TokenError:
+            raise('Bad token')    

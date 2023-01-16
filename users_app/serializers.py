@@ -133,28 +133,3 @@ class SetNewPasswordSerializer(serializers.Serializer):
         except Exception as e:
             raise AuthenticationFailed('The reset link is invalid', 401)
         return super().validate(attrs)
-        
-
-class LogoutSerializer(serializers.Serializer):
-    refresh = serializers.CharField()
-    class Meta:
-        model=User
-        fields = [
-            'email',
-        ]
-
-    default_error_message = {
-        'bad_token': ('Token is expired or invalid')
-    }
-
-    def validate(self, attrs):
-        self.token = attrs['refresh']
-        return attrs
-
-    def save(self, **kwargs):
-
-        try:
-            RefreshToken(self.token).blacklist()
-
-        except TokenError:
-            self.fail('bad_token')
