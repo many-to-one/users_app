@@ -201,7 +201,7 @@ class PasswordTokenCheckAPI(generics.GenericAPIView):
 class SetNewPasswordAPIView(generics.GenericAPIView):
     serializer_class = SetNewPasswordSerializer   
 
-    def post(self, request):
+    def patch(self, request):
         try:
             serializer = self.serializer_class(data=request.data)
         except Exception:
@@ -213,7 +213,7 @@ class SetNewPasswordAPIView(generics.GenericAPIView):
                 'message': 'Password reseted successfully!'
             },
             status=status.HTTP_200_OK,
-        )      
+        )  
 
 
 class LogoutView(views.APIView):

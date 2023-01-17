@@ -107,29 +107,27 @@ class SetNewPasswordSerializer(serializers.Serializer):
         min_length=6,
         write_only=True,
     )
-    token = serializers.CharField(
-        min_length=1, 
-        write_only=True,
-    )
+    # token = serializers.CharField(
+    #     min_length=1, 
+    # )
     uidb64 = serializers.CharField(
         min_length=1, 
-        write_only=True,
     )
 
     class Meta:
-        fields = ['password', 'token' 'uidb64']
+        fields = ['password', 'uidb64'] # 'token'
 
     def validate(self, attrs):
         try:
             password = attrs.get('password')
-            token = attrs.get('token')
+            # token = attrs.get('token')
             uidb64 = attrs.get('uidb64')
             id = force_str(urlsafe_base64_decode(uidb64))
             user = User.objects.get(id=id)
             user.set_password(password)
             user.save()
-            if not PasswordResetTokenGenerator().check_token(user, token):
-                raise AuthenticationFailed('The reset link is invalid', 401)
+            # if not PasswordResetTokenGenerator().check_token(user, token):
+            #     raise AuthenticationFailed('The reset link is invalid', 401)
         except Exception as e:
             raise AuthenticationFailed('The reset link is invalid', 401)
         return super().validate(attrs)
